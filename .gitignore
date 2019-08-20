@@ -1,0 +1,7 @@
+
+*.dll
+main.exe
+mainOLD.cpp
+README-SDL.txt
+SDL2_image-2.0.1/*
+SDL2-2.0.5/*
