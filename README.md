@@ -4,8 +4,9 @@ Side project for fun that crudely simulates cell and cell colony lifecycles.  Ha
 Not using Visual Studio to become more familiar with command line arguments and how they work.  Will probably use it in the future.
 
 ## Requirements:
-* SDL2
-* SDL2_image
+* SDL2-2.28.1
+* SDL2_image-2.6.3
+* SDL2_ttf-2.20.2
 
 ## Todo:
 * UI and controls

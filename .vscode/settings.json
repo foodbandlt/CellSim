@@ -1,0 +1,22 @@
+{
+    "makefile.configurations": [
+        {
+            "name": "Default",
+            "makeArgs": []
+        },
+        {
+            "name": "Debug",
+            "makeArgs": ["DEBUG=1"]
+        }
+    ],
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "${workspaceFolder}",
+            "binaryPath": "${workspaceFolder}\\main.exe",
+            "binaryArgs": []
+        }
+    ],
+    "files.associations": {
+        "vector": "cpp"
+    }
+}
