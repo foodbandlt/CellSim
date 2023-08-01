@@ -20,8 +20,8 @@
 #include <math.h>
 #include <random>
 #include <vector>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
+#include "SDL.h"
+#include <SDL_image.h>
 #include <chrono>
 
 using namespace std;
@@ -210,14 +210,14 @@ int main (int len, char** args)
 	
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
 	{
-		// std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
+		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		return 1;
 	}
 	
-	SDL_Window* win = SDL_CreateWindow("Doodle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	SDL_Window* win = SDL_CreateWindow("CDoodle", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
 	if (win == nullptr)
 	{
-		// std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
+		std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
 		SDL_Quit();
 		return 1;
 	}
@@ -231,16 +231,15 @@ int main (int len, char** args)
 	if (ren == nullptr)
 	{
 		SDL_DestroyWindow(win);
-		// std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
+		std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
 		SDL_Quit();
 		return 1;
 	}
 	
 	//Initialize PNG loading
-	int imgFlags = IMG_INIT_PNG;
-	if( !( IMG_Init( imgFlags ) & imgFlags ) )
+	if( (IMG_Init( IMG_INIT_PNG ) & IMG_INIT_PNG) != IMG_INIT_PNG )
 	{
-		// std::cout <<  "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
+		std::cout <<  "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
 		SDL_DestroyRenderer(ren);
 		SDL_DestroyWindow(win);
 		SDL_Quit();
@@ -279,24 +278,25 @@ int main (int len, char** args)
 	
 	vector<Cell*> cells;
 	
-	board[BOARD_SIZE/2][BOARD_SIZE/2] = true;
+	const int firstCellLoc = BOARD_SIZE/2;
+	board[firstCellLoc][firstCellLoc] = true;
 	Cell* firstCell = new Cell(ren);
-	firstCell->setPos(BOARD_SIZE/2, BOARD_SIZE/2);
+	firstCell->setPos(firstCellLoc, firstCellLoc);
 	cells.push_back(firstCell);
 	
-	SDL_Texture* firstCol = firstCell->getTexture();
+	SDL_Texture* firstColTex = firstCell->getTexture();
 	Uint8 r,g,b;
-	SDL_GetTextureColorMod(firstCol, &r, &g, &b);
+	SDL_GetTextureColorMod(firstColTex, &r, &g, &b);
 	int flasher = 0;
-	bool flasherDown = false;
-	// chrono::high_resolution_clock::time_point frameStart;
-	// chrono::milliseconds timeOnFrame (0);
+	int flasherDown = 1;
+	chrono::high_resolution_clock::time_point frameStart;
+	chrono::milliseconds timeOnFrame (0);
 	
 	int flasherSpeed = (1000 / TIME_BTWN_FRAMES) / 11;
 	
 	while (true)
 	{
-		// frameStart = chrono::high_resolution_clock::now();
+		frameStart = chrono::high_resolution_clock::now();
 		
 		while (SDL_PollEvent(&event))
 		{
@@ -311,17 +311,14 @@ int main (int len, char** args)
 		SDL_RenderClear(ren);
 		
 		// Handle first colony flashing
-		if (!flasherDown)
-			flasher += flasherSpeed;
-		else
-			flasher -= flasherSpeed;
+		flasher += flasherSpeed * flasherDown;
 		
 		if (flasher >= 255 - flasherSpeed)
-			flasherDown = true;
+			flasherDown = -1;
 		else if (flasher <= 0 + flasherSpeed)
-			flasherDown = false;
+			flasherDown = 1;
 		
-		SDL_SetTextureColorMod(firstCol, (int)fmax(r, flasher), (int)fmax(g, flasher), (int)fmax(b, flasher));
+		SDL_SetTextureColorMod(firstColTex, (int)fmax(r, flasher), (int)fmax(g, flasher), (int)fmax(b, flasher));
 		
 		
 		// Take a time step!
@@ -329,6 +326,7 @@ int main (int len, char** args)
 		{
 			cells[i]->timeStep();
 			
+			// Be a little more forgiving in the beginning 
 			if (cells[i]->isDead() && cells.size() > 3)
 			{
 				cells[i]->kill(board);
@@ -344,7 +342,8 @@ int main (int len, char** args)
 		//Update the screen
 		SDL_RenderPresent(ren);
 		
-		// timeOnFrame = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - frameStart);
+		timeOnFrame = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - frameStart);
+		std::cout << "Time spent on frame: " << timeOnFrame.count() << endl;
 		//SDL_Delay(TIME_BTWN_FRAMES - (int)timeOnFrame.count());
 	}
 	
