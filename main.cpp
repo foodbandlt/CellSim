@@ -306,6 +306,7 @@ int main (int len, char** args)
 	chrono::high_resolution_clock::time_point frameStart;
 	chrono::microseconds timeOnFrame (0);
 	const SDL_Color white = {255,255,255,255};
+	const SDL_Color transparent = {0,0,0,0};
 	SDL_Rect tempRect = {0, 0, 50, 20};
 	string fpsString("FPS: ");
 	int tickCounter = 0;
@@ -330,23 +331,6 @@ int main (int len, char** args)
 		
 		//First clear the renderer
 		SDL_RenderClear(ren);
-
-		// Write FPS of previous frametime to screen
-		if (tickCounter == 100)
-		{
-			SDL_FreeSurface(fpsTextSurf);
-			SDL_DestroyTexture(fpsTextText);
-			int accum = 1000000 / (accumulate(fpsCounter,fpsCounter + 5,0) / 5.0);
-			string fpsConcat = fpsString + to_string(accum);
-			
-			fpsTextSurf = TTF_RenderText_Solid(glacialFont, fpsConcat.c_str(), white);
-			fpsTextText = SDL_CreateTextureFromSurface(ren, fpsTextSurf);
-			tickCounter = 0;
-		}
-		
-		
-
-		SDL_RenderCopy(ren, fpsTextText, NULL, &tempRect);
 		
 		// Handle first colony flashing
 		flasher += flasherSpeed * flasherDown;
@@ -376,6 +360,20 @@ int main (int len, char** args)
 			cells[i]->reproduce(&cells, board);
 			cells[i]->render();
 		}
+
+		// Write FPS of previous frametime to screen
+		if (tickCounter == 100)
+		{
+			SDL_FreeSurface(fpsTextSurf);
+			SDL_DestroyTexture(fpsTextText);
+			int accum = 1000000 / (accumulate(fpsCounter,fpsCounter + 5,0) / 5.0);
+			string fpsConcat = fpsString + to_string(accum);
+			
+			fpsTextSurf = TTF_RenderText_LCD(glacialFont, fpsConcat.c_str(), white, transparent);
+			fpsTextText = SDL_CreateTextureFromSurface(ren, fpsTextSurf);
+			tickCounter = 0;
+		}
+		SDL_RenderCopy(ren, fpsTextText, NULL, &tempRect);
 	
 		//Update the screen
 		SDL_RenderPresent(ren);
