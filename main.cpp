@@ -18,9 +18,11 @@
 #include <iostream>
 #include <sstream>
 #include <math.h>
+#include <numeric>
 #include <random>
 #include <vector>
 #include "SDL.h"
+#include "SDL_ttf.h"
 #include <SDL_image.h>
 #include <chrono>
 
@@ -240,6 +242,21 @@ int main (int len, char** args)
 		std::cout <<  "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
 		return 1;
 	}
+
+	// initialize TTF fonts
+	if (TTF_Init() == -1)
+	{
+		std::cout <<  "SDL_ttf could not initialize! SDL_ttf Error: " << TTF_GetError() << std::endl;
+		return 1;
+	}
+
+	TTF_Font* glacialFont = TTF_OpenFont("./TTF/GlacialIndifference-Regular.ttf", 14);
+
+	if (glacialFont == NULL)
+	{
+		std::cout <<  "SDL_ttf could not initialize GlacialIndifference-Regular.ttf! SDL_ttf Error: " << TTF_GetError() << std::endl;
+		return 1;
+	}
 	
 	
 	// Load textures for cells
@@ -283,11 +300,19 @@ int main (int len, char** args)
 	SDL_Texture* firstColTex = firstCell->getTexture();
 	Uint8 r,g,b;
 	SDL_GetTextureColorMod(firstColTex, &r, &g, &b);
+
 	int flasher = 0;
 	int flasherDown = 1;
 	chrono::high_resolution_clock::time_point frameStart;
-	chrono::milliseconds timeOnFrame (0);
-	
+	chrono::microseconds timeOnFrame (0);
+	const SDL_Color white = {255,255,255,255};
+	SDL_Rect tempRect = {0, 0, 50, 20};
+	string fpsString("FPS: ");
+	int tickCounter = 0;
+	SDL_Surface* fpsTextSurf = TTF_RenderText_Solid(glacialFont, "0", white);
+	SDL_Texture* fpsTextText = SDL_CreateTextureFromSurface(ren, fpsTextSurf);
+	int fpsCounter[5] = {0};
+
 	int flasherSpeed = (1000 / TIME_BTWN_FRAMES) / 11;
 	
 	while (true)
@@ -305,13 +330,30 @@ int main (int len, char** args)
 		
 		//First clear the renderer
 		SDL_RenderClear(ren);
+
+		// Write FPS of previous frametime to screen
+		if (tickCounter == 100)
+		{
+			SDL_FreeSurface(fpsTextSurf);
+			SDL_DestroyTexture(fpsTextText);
+			int accum = 1000000 / (accumulate(fpsCounter,fpsCounter + 5,0) / 5.0);
+			string fpsConcat = fpsString + to_string(accum);
+			
+			fpsTextSurf = TTF_RenderText_Solid(glacialFont, fpsConcat.c_str(), white);
+			fpsTextText = SDL_CreateTextureFromSurface(ren, fpsTextSurf);
+			tickCounter = 0;
+		}
+		
+		
+
+		SDL_RenderCopy(ren, fpsTextText, NULL, &tempRect);
 		
 		// Handle first colony flashing
 		flasher += flasherSpeed * flasherDown;
-		
+
 		if (flasher >= 255 - flasherSpeed)
 			flasherDown = -1;
-		else if (flasher <= 0 + flasherSpeed)
+		else if (flasher <= flasherSpeed)
 			flasherDown = 1;
 		
 		SDL_SetTextureColorMod(firstColTex, (int)fmax(r, flasher), (int)fmax(g, flasher), (int)fmax(b, flasher));
@@ -338,8 +380,10 @@ int main (int len, char** args)
 		//Update the screen
 		SDL_RenderPresent(ren);
 		
-		timeOnFrame = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - frameStart);
-		std::cout << "Time spent on frame: " << timeOnFrame.count() << endl;
+		timeOnFrame = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - frameStart);
+		fpsCounter[tickCounter%5] = timeOnFrame.count();
+		tickCounter++;
+		//std::cout << "Time spent on frame: " << timeOnFrame.count() << endl;
 		//SDL_Delay(TIME_BTWN_FRAMES - (int)timeOnFrame.count());
 	}
 	
