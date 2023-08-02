@@ -192,7 +192,7 @@ class Cell
 		 // if ( tempRect.x > 0 && tempRect.x < SCREEN_WIDTH &&
 				 // tempRect.y > 0 && tempRect.y < SCREEN_HEIGHT )
 				
-			SDL_RenderCopyEx(ren, texture, NULL, &tempRect, 0, NULL, SDL_FLIP_NONE);
+			SDL_RenderCopy(ren, texture, NULL, &tempRect);
 	}
 	
 	private:
@@ -230,9 +230,7 @@ int main (int len, char** args)
 	SDL_Renderer* ren = SDL_CreateRenderer(win, -1, flags);
 	if (ren == nullptr)
 	{
-		SDL_DestroyWindow(win);
 		std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
-		SDL_Quit();
 		return 1;
 	}
 	
@@ -240,9 +238,6 @@ int main (int len, char** args)
 	if( (IMG_Init( IMG_INIT_PNG ) & IMG_INIT_PNG) != IMG_INIT_PNG )
 	{
 		std::cout <<  "SDL_image could not initialize! SDL_image Error: " << IMG_GetError() << std::endl;
-		SDL_DestroyRenderer(ren);
-		SDL_DestroyWindow(win);
-		SDL_Quit();
 		return 1;
 	}
 	
@@ -278,6 +273,7 @@ int main (int len, char** args)
 	
 	vector<Cell*> cells;
 	
+	// Make the first cell
 	const int firstCellLoc = BOARD_SIZE/2;
 	board[firstCellLoc][firstCellLoc] = true;
 	Cell* firstCell = new Cell(ren);
